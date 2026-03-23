@@ -1,0 +1,22 @@
+[package]
+name = "curlit"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "curlit"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+clap-verbosity-flag = { version = "3", default-features = false, features = [
+    "tracing",
+] }
+curl = "0.4"
+xdirs = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+thiserror = "2"

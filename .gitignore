@@ -1,0 +1,16 @@
+### Rust/Cargo ###
+
+/target
+/Cargo.lock
+
+### VSCode ###
+
+/.VSCode
+
+### Agents ###
+
+/.claude
+
+### Testing ###
+
+/curlit.toml
