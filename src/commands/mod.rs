@@ -1,4 +1,5 @@
 pub mod add;
+pub mod cache;
 pub mod completions;
 pub mod delete;
 pub mod init;
@@ -31,12 +32,23 @@ pub fn run(cli: Cli) -> Result<ExitCode> {
             shell,
             cache_dir,
         } => {
-            let _span = info_span!("now").entered();
+            let _span = info_span!(
+                "now",
+                url = url,
+                shell = shell,
+                cache_dir = cache_dir.as_ref().map(|p| p.display().to_string()),
+            )
+            .entered();
             now::run(&url, shell.as_deref(), cache_dir.as_ref())?;
         }
 
         Commands::Install { file, name } => {
-            let _span = info_span!("install").entered();
+            let _span = info_span!(
+                "install",
+                file = file.as_ref().map(|p| p.display().to_string()),
+                name = name,
+            )
+            .entered();
             install::run(file.as_deref(), name.as_deref())?;
         }
 
@@ -50,7 +62,21 @@ pub fn run(cli: Cli) -> Result<ExitCode> {
             entry_type,
             force,
         } => {
-            let _span = info_span!("add").entered();
+            let _span = info_span!(
+                "add",
+                file = file.as_ref().map(|p| p.display().to_string()),
+                url = url,
+                name = name,
+                command_name = command_name,
+                shell = shell,
+                cache_dir = cache_dir.as_ref().map(|p| p.display().to_string()),
+                entry_type = entry_type
+                    .as_ref()
+                    .map(|v| v.to_string())
+                    .unwrap_or_default(),
+                force = force,
+            )
+            .entered();
             add::run(
                 file.as_deref(),
                 url,
@@ -64,7 +90,12 @@ pub fn run(cli: Cli) -> Result<ExitCode> {
         }
 
         Commands::Delete { file, name } => {
-            let _span = info_span!("delete").entered();
+            let _span = info_span!(
+                "delete",
+                file = file.as_ref().map(|p| p.display().to_string()),
+                name = name,
+            )
+            .entered();
             delete::run(file.as_deref(), &name)?;
         }
 
@@ -73,8 +104,47 @@ pub fn run(cli: Cli) -> Result<ExitCode> {
             name,
             as_table,
         } => {
-            let _span = info_span!("view").entered();
+            let _span = info_span!(
+                "view",
+                file = file.as_ref().map(|p| p.display().to_string()),
+                name = name,
+                as_table = as_table,
+            )
+            .entered();
             view::run(file.as_deref(), name.as_deref(), as_table)?;
+        }
+
+        Commands::CacheView {
+            cache_dir,
+            as_table,
+        } => {
+            let _span = info_span!(
+                "cache-view",
+                cache_dir = cache_dir.as_ref().map(|p| p.display().to_string()),
+                as_table = as_table
+            )
+            .entered();
+            cache::view(cache_dir, as_table)?;
+        }
+
+        Commands::CacheRefresh { cache_dir, name } => {
+            let _span = info_span!(
+                "cache-refresh",
+                cache_dir = cache_dir.as_ref().map(|p| p.display().to_string()),
+                name = name
+            )
+            .entered();
+            cache::refresh(cache_dir, name)?;
+        }
+
+        Commands::CacheClear { cache_dir, name } => {
+            let _span = info_span!(
+                "cache-clear",
+                cache_dir = cache_dir.as_ref().map(|p| p.display().to_string()),
+                name = name
+            )
+            .entered();
+            cache::clear(cache_dir, name)?;
         }
     }
 

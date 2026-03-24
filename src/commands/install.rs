@@ -31,9 +31,18 @@ pub fn run(file: Option<&Path>, name: Option<&str>) -> Result<ExitCode> {
 
     for (entry_name, entry) in entries {
         // Skip if type=cli and command already in PATH
-        if entry.entry_type == Some(EntryType::Cli) && command_in_path(&entry_name) {
-            info!("skipping `{entry_name}` — already in PATH");
-            continue;
+        if entry.entry_type == Some(EntryType::Cli) {
+            if let Some(command_name) = &entry.command_name
+                && command_in_path(&entry_name)
+            {
+                info!(
+                    "skipping install, command-name: `{command_name}` executable already in PATH"
+                );
+                continue;
+            } else if command_in_path(&entry_name) {
+                info!("skipping install, name: `{entry_name}` executable already in PATH");
+                continue;
+            }
         }
 
         info!("installing `{entry_name}` from {}", entry.url);
