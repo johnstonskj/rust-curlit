@@ -7,7 +7,7 @@ A Rust command-line interface (CLI) which automates installs of the kind `curl <
 
 This tool has 2 modes, an _immediate_ mode to execute a single install, and _file_ mode which reads from a configuration file and can install all tools.
 
-## Commands
+## Install Commands
 
 ### Now (Immediate Mode)
 
@@ -47,6 +47,31 @@ Options:
 ```
 
 The command will return an error if a config file **is not** present, or is present and **not writable**. Additionally, it will return an error if an entry name is provided and **no entry with that name exists** in the configuration file.
+
+## Configuration Commands
+
+These commands act on the configuration file(s), allowing the management of reusable install URLs.
+
+### Initialize
+
+The command `curlit init` will create a config and cache directory for curlit and add an empty config file
+in the `${XDG_CONFIG_HOME}/curlit` directory.
+
+1. Create the directory `${XDG_CONFIG_HOME}/curlit`.
+2. Create an empty file `config.toml` within the previous directory.
+3. Create the directory `${XDG_CACHE_HOME}/curlit`.
+
+```bash
+❯ curlit init --help
+Initialize curlit config and cache directories
+
+Usage: curlit init [OPTIONS]
+
+Options:
+  -v, --verbose...  Increase logging verbosity
+  -q, --quiet...    Decrease logging verbosity
+  -h, --help        Print help
+```
 
 ### Add Entry
 
@@ -128,26 +153,81 @@ Loaded from: "/Users/s0j0g7m/Projects/curlit/curlit.toml"
 | brew         | https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash  | cli  | -           |
 ```
 
-### Initialize
+## Cache Commands
 
-The command `curlit init` will create a config and cache directory for curlit and add an empty config file
-in the `${XDG_CONFIG_HOME}/curlit` directory.
+These commands operate on the resources stored in the cache.
 
-1. Create the directory `${XDG_CONFIG_HOME}/curlit`.
-2. Create an empty file `config.toml` within the previous directory.
-3. Create the directory `${XDG_CACHE_HOME}/curlit`.
+### View Cache
 
 ```bash
-❯ curlit init --help
-Initialize curlit config and cache directories
+❯ curlit cache-view --help
+View the current cache directory contents
 
-Usage: curlit init [OPTIONS]
+Usage: curlit cache-view [OPTIONS]
 
 Options:
-  -v, --verbose...  Increase logging verbosity
-  -q, --quiet...    Decrease logging verbosity
-  -h, --help        Print help
+  -c, --cache-dir <CACHE_DIR>
+          Override the standard directory to cache downloaded scripts.
+          
+          The default value is "${XDG_CACHE_DIR}/curlit".
+
+  -v, --verbose...
+          Increase logging verbosity
+
+      --as-table
+          Display results as a Markdown table
+
+  -q, --quiet...
+          Decrease logging verbosity
+
+  -h, --help
+          Print help (see a summary with '-h')
 ```
+
+```bash
+❯ curlit cache-view
+Cache directory = "/Users/s0j0g7m/Library/Caches/curlit"
+
+[brew]
+  cache-path = "/Users/me/.cache/curlit/brew/install-script"
+  src-url    = "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+  fetched.   = Tue, 24 Mar 2026 07:51:16 -0700
+  size       = 9.33 kB
+  entity-tag = "c5af88b81a64bf3f2e987044a6edc154bd00f32c1b6ac67ef0f3828726aa8d00"
+```
+
+### Clear Cache
+
+```bash
+❯ curlit cache-clear --help
+Clear the current cache directory contents
+
+Usage: curlit cache-clear [OPTIONS]
+
+Options:
+  -c, --cache-dir <CACHE_DIR>
+          Override the standard directory to cache downloaded scripts.
+          
+          The default value is "${XDG_CACHE_DIR}/curlit".
+
+  -v, --verbose...
+          Increase logging verbosity
+
+  -n, --name <NAME>
+          Name of entry to view; shows all if omitted
+
+  -q, --quiet...
+          Decrease logging verbosity
+
+  -h, --help
+          Print help (see a summary with '-h')
+```
+
+### Refresh Cache
+
+TBD
+
+## Utility Commands
 
 ### Generate Completions
 
@@ -178,7 +258,7 @@ and has the following keys:
 * **`cache-dir`**; (optional) The cache directory to store downloaded files in; default: `${XDG_CACHE_HOME}/curlit`.
 * **`shell`**; (optional) The shell to execute with the downloaded script; default: `bash`.
 * **`type`**; (optional) The type of installation, currently only `cli` is supported.
-* **`name`**; (optional) The name of the tool to install/check; defaults to record name.
+* **`command-name`**; (optional) The name of the tool to install/check; defaults to entry name.
 
 The file will be looked for in the following locations, in order.
 

@@ -1,11 +1,12 @@
 use crate::{
-    cache::cached_file_name,
+    cache::ResourceCache,
     config::{EntryType, resolve_config},
     error::Result,
-    fetch::{fetch_url, filename_from_url},
+    fetch::fetch_url,
     shell::{execute_with_shell, resolve_shell},
 };
-use std::{io::Write, path::Path, process::ExitCode};
+use is_executable::IsExecutable;
+use std::{path::Path, process::ExitCode};
 use tracing::{error, info, trace};
 
 pub fn run(file: Option<&Path>, name: Option<&str>) -> Result<ExitCode> {
@@ -33,33 +34,35 @@ pub fn run(file: Option<&Path>, name: Option<&str>) -> Result<ExitCode> {
         // Skip if type=cli and command already in PATH
         if entry.entry_type == Some(EntryType::Cli) {
             if let Some(command_name) = &entry.command_name
-                && command_in_path(&entry_name)
+                && is_command_in_path(&entry_name)
             {
                 info!(
                     "skipping install, command-name: `{command_name}` executable already in PATH"
                 );
                 continue;
-            } else if command_in_path(&entry_name) {
+            } else if is_command_in_path(&entry_name) {
                 info!("skipping install, name: `{entry_name}` executable already in PATH");
                 continue;
             }
         }
 
-        info!("installing `{entry_name}` from {}", entry.url);
-        let content = fetch_url(&entry.url)?;
-        let file_name = filename_from_url(&entry.url);
-        let shell = resolve_shell(entry.shell.as_deref());
-
-        let script_path = if let Some(dir) = &entry.cache_dir {
-            std::fs::create_dir_all(dir)?;
-            dir.join(&file_name)
+        let cache = if let Some(cache_dir) = entry.cache_dir.as_ref() {
+            ResourceCache::open(cache_dir.clone())
         } else {
-            // Use default cache dir
-            cached_file_name(&entry_name, &file_name)?
+            ResourceCache::open_default()
+        }?;
+        let script_path = if cache.is_cached(&entry_name)? {
+            // TODO: use metadata to call HEAD on resource?
+            cache.entry_content_path(&entry_name)
+        } else {
+            let resource = fetch_url(&entry.url)?;
+            let (script_path, _) = cache.save(&resource, &entry_name)?;
+            script_path
         };
-        let mut f = std::fs::File::create(&script_path)?;
-        f.write_all(content.as_bytes())?;
 
+        info!("installing `{entry_name}` using script {script_path:?}");
+
+        let shell = resolve_shell(entry.shell.as_deref());
         execute_with_shell(&shell, &script_path, &entry_name)?;
         info!("installed `{entry_name}`");
     }
@@ -67,10 +70,11 @@ pub fn run(file: Option<&Path>, name: Option<&str>) -> Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-fn command_in_path(name: &str) -> bool {
+fn is_command_in_path(name: &str) -> bool {
     if let Ok(path_var) = std::env::var("PATH") {
         for dir in std::env::split_paths(&path_var) {
-            if dir.join(name).is_file() {
+            let maybe_path = dir.join(name);
+            if maybe_path.is_file() && maybe_path.is_executable() {
                 return true;
             }
         }

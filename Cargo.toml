@@ -20,3 +20,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 thiserror = "2"
+is_executable = "1.0"
+chrono = { version = "0.4.44", features = ["clock", "serde"] }
+humansize = "2.1.3"

@@ -5,6 +5,7 @@ mod config;
 mod error;
 mod fetch;
 mod shell;
+mod tabular;
 
 use clap::Parser;
 use cli::Cli;
@@ -12,6 +13,8 @@ use commands::run;
 use std::process::ExitCode;
 use tracing::{error, info};
 use tracing_subscriber::filter::EnvFilter;
+
+pub const APP_NAME: &str = "curlit";
 
 fn main() -> Result<ExitCode, error::CurlitError> {
     let cli = Cli::parse();
